@@ -64,9 +64,7 @@ void _http_request(int fd, char* path, char* host_name) {
 
     // sending logic
     char* temp = request;
-    int len = strlen(request), bytes_sent = send(fd, request, len, 0);
-    request += bytes_sent; 
-    len -= bytes_sent;
+    int len = strlen(request), bytes_sent;
 
     // ensure whole string is sent, even if it's in parts
     while (len > 0) {
@@ -100,7 +98,17 @@ void _http_request(int fd, char* path, char* host_name) {
     }
 
     fclose(f_ptr);
-    free(temp);
+
+    char* cleanup_call = malloc(sizeof(char) * (strlen(file_loc) + 19)); // "python cleanup.py " = 19
+    
+    sprintf(cleanup_call, "python cleanup.py %s", file_loc);
+
+    // run script to clean up headers and format html
+    system(cleanup_call);
+
+    free(request);
+    free(cleanup_call);
+    free(file_loc);
 }
 
 void _start_socket(char* host_name, char* port, char* path) {

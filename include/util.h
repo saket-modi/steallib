@@ -11,3 +11,6 @@ typedef struct {
 
 // constructor for parsing url string 
 parsed_url_t* _parse_url(const char*);
+
+// start socket, get fd, send http request
+void _start_socket(char*, char*, char*);
