@@ -153,7 +153,6 @@ void _https_request(int fd, char* path, char* host_name) {
     /* write http request to the server now */
     // request
     char* request = _make_request(path, host_name);
-    printf(request);
 
     // send request
     size_t written;
