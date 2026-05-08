@@ -74,7 +74,7 @@ jobs:
       if: matrix.build-mode == 'manual'
       shell: bash
       run: |
-        gcc util.c
+        gcc src/util.c
         exit 1
 
     - name: Perform CodeQL Analysis
