@@ -14,3 +14,7 @@ parsed_url_t* _parse_url(const char*);
 
 // start socket, get fd, send http request
 void _start_socket(char*, char*, char*);
+
+// define http/https funcs in separate files
+void _http_request(int, char*, char*);
+void _https_request(int, char*, char*);

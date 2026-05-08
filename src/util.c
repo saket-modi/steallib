@@ -52,65 +52,6 @@ parsed_url_t* _parse_url(const char* url) {
     return temp;
 }
 
-void _http_request(int fd, char* path, char* host_name) {
-    char* request = malloc(sizeof(char) * 1024); // 10 bits, arbitrary choice
-    snprintf(request, 1024,
-    "GET %s HTTP/1.1\r\n"
-    "Host: %s\r\n"
-    "User-Agent: Mozilla/5.0...\r\n"
-    "Accept: */*\r\n"
-    "Connection: close\r\n\r\n", 
-    path, host_name);
-
-    // sending logic
-    char* temp = request;
-    int len = strlen(request), bytes_sent;
-
-    // ensure whole string is sent, even if it's in parts
-    while (len > 0) {
-        bytes_sent = send(fd, request, len, 0);
-        request += bytes_sent;
-        len -= bytes_sent;
-    }
-
-    // reception logic
-    // write to a constant buffer while simultaneously streaming the content on to a local file (disk streaming)
-    char buffer[BUFSIZ];
-    int bytes_received;
-
-    FILE* f_ptr;
-
-    // file location: ../tests/host_name.html
-    char* temp_hn = host_name;
-    strcat(temp_hn, ".html"); // file name with extension
-    char* file_loc = malloc(sizeof(char) * (strlen(temp) + 15)); // ../tests/ is 9 chars but 15 for safety
-    strcat(file_loc, "../tests/");
-    strcat(file_loc, temp_hn);
-
-    f_ptr = fopen(file_loc, "wb");
-    if (!f_ptr) {
-        fprintf(stderr, "error while opening file!");
-        return;
-    }
-
-    while ((bytes_received = recv(fd, buffer, BUFSIZ, 0)) > 0) {
-        fwrite(buffer, sizeof(char), bytes_received, f_ptr);
-    }
-
-    fclose(f_ptr);
-
-    char* cleanup_call = malloc(sizeof(char) * (strlen(file_loc) + 19)); // "python cleanup.py " = 19
-    
-    sprintf(cleanup_call, "python cleanup.py %s", file_loc);
-
-    // run script to clean up headers and format html
-    system(cleanup_call);
-
-    free(request);
-    free(cleanup_call);
-    free(file_loc);
-}
-
 void _start_socket(char* host_name, char* port, char* path) {
     struct addrinfo hints, *res, *p;
     int status, socket_fd;
@@ -158,21 +99,11 @@ void _start_socket(char* host_name, char* port, char* path) {
 
     // after connection, the client can send or receive once it is accepted
     // by the server
-    _http_request(socket_fd, path, host_name); 
+    if (port == "80")
+        _http_request(socket_fd, path, host_name);
+    else if (port == "443")
+        _https_request(socket_fd, path, host_name);
 
     // close the socket after all ops are done
     close(socket_fd);
-}
-
-/* testing funcs */
-int main() {
-    const char* str = "http://example.com/";
-    parsed_url_t* parsed = _parse_url(str);
-    printf("Protocol: %s\nHost name: %s\nPort: %s\nPath: %s\n", parsed->protocol, parsed->host_name, parsed->port, parsed->path);
-    _start_socket(parsed->host_name, parsed->port, parsed->path);
-
-    free(parsed->protocol);
-    free(parsed->host_name);
-    free(parsed->path);
-    free(parsed);
 }
