@@ -74,7 +74,7 @@ jobs:
       if: matrix.build-mode == 'manual'
       shell: bash
       run: |
-        gcc src/util.c src/protocols.c src/main.c -lssl -lcrypto
+        gcc src/main.c src/protocols.c src/main.c -lssl -lcrypto
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v4

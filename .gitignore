@@ -4,3 +4,5 @@
 *.vscode
 !requirements.txt
 !placeholder.html
+*.o
+*.a

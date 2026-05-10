@@ -4,7 +4,7 @@
 #include <sys/socket.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
-#include "../include/util.h"
+#include "util.h"
 
 char* _make_request(char* path, char* host_name) {
     char* request = malloc(sizeof(char) * 1024); // 1024 bytes, arbitrary
@@ -21,14 +21,14 @@ char* _make_request(char* path, char* host_name) {
 
 char* _get_file_loc(char* host_name) {
     char* file_loc = malloc(sizeof(char) * (strlen(host_name) + 15)); // ../tests/ is 9 chars but 15 for safety
-    sprintf(file_loc, "../tests/%s.html", host_name);
+    sprintf(file_loc, "./tests/%s.html", host_name);
     return file_loc;
 }
 
 void _clean_output(char* file_loc) {
     char* cleanup_call = malloc(sizeof(char) * (strlen(file_loc) + 19)); // "python cleanup.py " = 19
     
-    sprintf(cleanup_call, "python cleanup.py %s", file_loc);
+    sprintf(cleanup_call, "python src/cleanup.py %s", file_loc);
 
     // run script to clean up headers and format html
     system(cleanup_call);
@@ -41,7 +41,6 @@ void _http_request(int fd, char* path, char* host_name) {
     char* request = _make_request(path, host_name);
 
     // sending logic
-    char* temp = request;
     int len = strlen(request), bytes_sent;
 
     // ensure whole string is sent, even if it's in parts

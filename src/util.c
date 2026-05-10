@@ -7,7 +7,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <unistd.h>
-#include "../include/util.h"
+#include "util.h"
 
 #define BACKLOG_LIMIT 20
 
@@ -50,6 +50,14 @@ parsed_url_t* _parse_url(const char* url) {
     *path_temp = '\0';
     temp->port = !strcmp(temp->protocol, "https") ? "443" : "80";
     return temp;
+}
+
+int _clear_parsed_url(parsed_url_t* parsed) {
+    free(parsed->protocol);
+    free(parsed->host_name);
+    free(parsed->path);
+    free(parsed);
+    return 0;
 }
 
 void _start_socket(char* host_name, char* port, char* path) {
@@ -99,9 +107,9 @@ void _start_socket(char* host_name, char* port, char* path) {
 
     // after connection, the client can send or receive once it is accepted
     // by the server
-    if (port == "80")
+    if (strcmp(port, "80") == 0)
         _http_request(socket_fd, path, host_name);
-    else if (port == "443")
+    else if (strcmp(port, "443") == 0)
         _https_request(socket_fd, path, host_name);
 
     // close the socket after all ops are done
