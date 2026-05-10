@@ -101,6 +101,17 @@ void _http_request(int fd, char* path, char* host_name) {
     // reception logic
     // write to a constant buffer while simultaneously streaming the content on to a local file (disk streaming)
     pthread_create(&receiver, NULL, _recv_http_request, &send_args);
+
+    pthread_join(sender, NULL);
+    pthread_join(receiver, NULL);
+}
+
+void* _send_https_request(void* args) {
+    return NULL;
+}
+
+void* _recv_https_request(void* args) {
+    return NULL;
 }
 
 void _https_request(int fd, char* path, char* host_name) {
