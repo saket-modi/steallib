@@ -33,8 +33,11 @@ void _clean_output(char* file_loc) {
     free(cleanup_call);
 }
 
-void _http_request(int fd, char* path, char* host_name) {
-    // request
+void* _send_http_request(void* args) {
+    struct request_args* r = (struct request_args*)args;
+    int fd = (int)(r->fd);
+    char *path = (char*)(r->path), *host_name = (char*)(r->host_name);
+
     char* request = _make_request(path, host_name);
 
     // sending logic
@@ -47,8 +50,16 @@ void _http_request(int fd, char* path, char* host_name) {
         len -= bytes_sent;
     }
 
-    // reception logic
-    // write to a constant buffer while simultaneously streaming the content on to a local file (disk streaming)
+    free(request);
+
+    return NULL;
+}
+
+void* _recv_http_request(void* args) {
+    struct request_args* r = (struct request_args*)args;
+    int fd = (int)(r->fd);
+    char *host_name = (char*)(r->host_name);
+
     char buffer[BUFSIZ];
     int bytes_received;
 
@@ -60,7 +71,7 @@ void _http_request(int fd, char* path, char* host_name) {
     f_ptr = fopen(file_loc, "wb");
     if (!f_ptr) {
         fprintf(stderr, "error while opening file!");
-        return;
+        return NULL;
     }
 
     while ((bytes_received = recv(fd, buffer, BUFSIZ, 0)) > 0) {
@@ -71,8 +82,25 @@ void _http_request(int fd, char* path, char* host_name) {
 
     _clean_output(file_loc);
 
-    free(request);
     free(file_loc);
+
+    return NULL;
+}
+
+void _http_request(int fd, char* path, char* host_name) {
+    pthread_t sender, receiver;
+
+    struct request_args send_args;
+    send_args.fd = fd;
+    send_args.path = path;
+    send_args.host_name = host_name;
+
+    // request
+    pthread_create(&sender, NULL, _send_http_request, &send_args);
+
+    // reception logic
+    // write to a constant buffer while simultaneously streaming the content on to a local file (disk streaming)
+    pthread_create(&receiver, NULL, _recv_http_request, &send_args);
 }
 
 void _https_request(int fd, char* path, char* host_name) {

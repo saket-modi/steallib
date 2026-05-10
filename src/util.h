@@ -15,6 +15,13 @@ typedef struct {
     char* path;
 } parsed_url_t;
 
+// for passing to threads
+struct request_args {
+    int fd;
+    char* path;
+    char* host_name;
+};
+
 /* FUNCTIONS */
 
 // constructor for parsing url string 
