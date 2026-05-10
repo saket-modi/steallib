@@ -107,11 +107,13 @@ void _http_request(int fd, char* path, char* host_name) {
 }
 
 void* _send_https_request(void* args) {
-    return NULL;
+    // tbd
+    return args;
 }
 
 void* _recv_https_request(void* args) {
-    return NULL;
+    // tbd
+    return args;
 }
 
 void _https_request(int fd, char* path, char* host_name) {

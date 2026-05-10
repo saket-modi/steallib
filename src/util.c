@@ -92,13 +92,10 @@ void _start_socket(char* host_name, char* port, char* path) {
         inet_ntop(p->ai_family, addr, ipstr, sizeof ipstr);
         printf(" %s: %s\n", ipver, ipstr);
         socket_fd = socket(p->ai_family, p->ai_socktype, p->ai_protocol);
-        if (socket_fd != -1) break;
+        status = connect(socket_fd, p->ai_addr, p->ai_addrlen);
+        if (socket_fd != -1 && status != -1) break;
     }
     
-    if ((status = connect(socket_fd, p->ai_addr, p->ai_addrlen)) == -1) {
-        fprintf(stderr, "could not connect to host!");
-        return;
-    }
     freeaddrinfo(res);
 
     // after connection, the client can send or receive once it is accepted
