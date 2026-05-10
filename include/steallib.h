@@ -15,4 +15,4 @@ parsed_url_t* _parse_url(const char*);
 int _clear_parsed_url(parsed_url_t*);
 
 // start socket, get fd, send http request
-void _start_socket(char*, char*, char*);
+void _start_socket(char*, char*, char*, const char*);
