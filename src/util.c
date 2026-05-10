@@ -1,11 +1,7 @@
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
 #include <netdb.h>
 #include <netinet/in.h>
-#include <arpa/inet.h> // for inet_ntop()
+#include <arpa/inet.h> // for inet_ntop() / IP testing
 #include <sys/types.h>
-#include <sys/socket.h>
 #include <unistd.h>
 #include "util.h"
 

@@ -1,9 +1,6 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <sys/socket.h>
 #include <openssl/ssl.h>
 #include <openssl/err.h>
+#include <pthread.h>
 #include "util.h"
 
 char* _make_request(char* path, char* host_name) {

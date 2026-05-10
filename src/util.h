@@ -1,3 +1,11 @@
+#pragma once // only gets included once in final compilation
+
+// common includes
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <sys/socket.h>
+
 /* STRUCTURES */
 typedef struct {
     // https://example.com/api/data
