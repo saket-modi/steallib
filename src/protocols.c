@@ -59,7 +59,7 @@ void _http_request(int fd, char* path, char* host_name) {
 
     f_ptr = fopen(file_loc, "wb");
     if (!f_ptr) {
-        fprintf(stderr, "error while opening file!");
+        fprintf(stderr, "error while opening file!\n");
         return;
     }
 
@@ -85,7 +85,7 @@ void _https_request(int fd, char* path, char* host_name) {
     /* ssl context setup */
     SSL_CTX* ctx = SSL_CTX_new(TLS_client_method());
     if (!ctx) {
-        fprintf(stderr, "ssl context could not be set!");
+        fprintf(stderr, "ssl context could not be set!\n");
         return;
     }
 
@@ -93,26 +93,26 @@ void _https_request(int fd, char* path, char* host_name) {
     SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, NULL);
 
     if (!SSL_CTX_set_default_verify_paths(ctx)) {
-        fprintf(stderr, "couldn't set the default certificate store!");
+        fprintf(stderr, "couldn't set the default certificate store!\n");
         return;
     }
 
     if (!SSL_CTX_set_min_proto_version(ctx, TLS1_2_VERSION)) {
-        fprintf(stderr, "couldn't set minimum TLS version to 1.2");
+        fprintf(stderr, "couldn't set minimum TLS version to 1.2!\n");
         return;
     }
 
     /* create ssl object and bio it to the socket fd */
     SSL* ssl_o = SSL_new(ctx);
     if (!ssl_o) {
-        fprintf(stderr, "couldn't create new ssl object!");
+        fprintf(stderr, "couldn't create new ssl object!\n");
         return;
     }
 
     BIO* bio;
     bio = BIO_new(BIO_s_socket());
     if (!bio) {
-        fprintf(stderr, "could not declare bio!");
+        fprintf(stderr, "could not declare bio!\n");
         return;
     }
 
@@ -123,19 +123,19 @@ void _https_request(int fd, char* path, char* host_name) {
 
     // a server may support multiple hosts, thus it is required to specify which host name we wish to connect to
     if (!SSL_set_tlsext_host_name(ssl_o, host_name)) {
-        fprintf(stderr, "couldn't set host name for initial ClientHello!");
+        fprintf(stderr, "couldn't set host name for initial ClientHello!\n");
         return;
     }
 
     // now the app must verify the certificate returned by the server to belong to that host name
     if (!SSL_set1_host(ssl_o, host_name)) {
-        fprintf(stderr, "couldn't set host name to verify from the server-returned certificate!");
+        fprintf(stderr, "couldn't set host name to verify from the server-returned certificate!\n");
         return;
     }
 
     // connect to the server
     if (SSL_connect(ssl_o) < 1) {
-        fprintf(stderr, "failed to connect to the server!");
+        fprintf(stderr, "failed to connect to the server!\n");
 
         // get more information abt the failure if it is from a verification error
         // X509_OK represents a successful cert verif
@@ -155,7 +155,7 @@ void _https_request(int fd, char* path, char* host_name) {
 
     // sends the whole request; no loop required unlike http
     if (!SSL_write_ex(ssl_o, request, strlen(request), &written)) {
-        fprintf(stderr, "failed to write ssl request to server!");
+        fprintf(stderr, "failed to write ssl request to server!\n");
     }
 
     // receive output and write it to a local file
@@ -163,7 +163,7 @@ void _https_request(int fd, char* path, char* host_name) {
     char* file_loc = _get_file_loc(host_name);
     fptr = fopen(file_loc, "wb");
     if (!fptr) {
-        fprintf(stderr, "could not open file for writing!");
+        fprintf(stderr, "could not open file for writing!\n");
         return;
     }
 
@@ -178,15 +178,13 @@ void _https_request(int fd, char* path, char* host_name) {
     // when all the data has been sent and no more remains, so a check if necessary to ensure
     // that it's the latter case. SSL_ERROR_ZERO_RETURN is sent when the peer (server) finishes sending data
     if (SSL_get_error(ssl_o, 0) != SSL_ERROR_ZERO_RETURN) {
-        fprintf(stderr, "failed reading remaining data!");
-        return;
+        fprintf(stderr, "failed reading remaining data OR server collapsed connection!\n");
     }
 
     // shut down the connection, server already shut down above, client should shut down too
     int ret = SSL_shutdown(ssl_o);
     if (ret < 1) {
-        fprintf(stderr, "error shutting down!");
-        return;
+        fprintf(stderr, "error shutting down OR server collapsed connection!\n");
     }
 
     _clean_output(file_loc);
