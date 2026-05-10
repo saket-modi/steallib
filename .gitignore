@@ -6,3 +6,4 @@
 !placeholder.html
 *.o
 *.a
+main.c
