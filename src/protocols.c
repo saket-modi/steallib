@@ -8,8 +8,8 @@ char* _make_request(char* path, char* host_name) {
     snprintf(request, 1024,
     "GET %s HTTP/1.0\r\n" // HTTPS/1.1 uses chunked encoding, might deal with that later
     "Host: %s\r\n"
-    "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36\r\n"
-    "Accept: text/html\r\n"
+    "User-Agent: Mozilla/5.0 (compatible; MSIE 9.0; Windows; U; Windows NT 6.2; Win64; x64 Trident/5.0)\r\n"
+    "Accept: */*\r\n"
     "Connection: close\r\n\r\n", 
     path, host_name);
 
@@ -22,10 +22,10 @@ char* _get_file_loc(char* host_name) {
     return file_loc;
 }
 
-void _clean_output(char* file_loc, const char* url) {
+void _clean_output(char* file_loc) {
     char* cleanup_call = malloc(sizeof(char) * (strlen(file_loc) + 19)); // "python cleanup.py " = 19
     
-    sprintf(cleanup_call, "python src/cleanup.py %s %s", file_loc, url);
+    sprintf(cleanup_call, "python src/cleanup.py %s", file_loc);
 
     // run script to clean up headers and format html
     system(cleanup_call);
@@ -59,7 +59,6 @@ void* _recv_http_request(void* args) {
     struct request_args* r = (struct request_args*)args;
     int fd = (int)(r->fd);
     char *host_name = (char*)(r->host_name);
-    char* url = (char*)(r->url);
 
     char buffer[BUFSIZ];
     int bytes_received;
@@ -81,21 +80,20 @@ void* _recv_http_request(void* args) {
 
     fclose(f_ptr);
 
-    _clean_output(file_loc, url);
+    _clean_output(file_loc);
 
     free(file_loc);
 
     return NULL;
 }
 
-void _http_request(int fd, char* path, char* host_name, const char* url) {
+void _http_request(int fd, char* path, char* host_name) {
     pthread_t sender, receiver;
 
     struct request_args send_args;
     send_args.fd = fd;
     send_args.path = path;
     send_args.host_name = host_name;
-    send_args.url = url;
 
     // request
     pthread_create(&sender, NULL, _send_http_request, &send_args);
@@ -118,7 +116,7 @@ void* _recv_https_request(void* args) {
     return args;
 }
 
-void _https_request(int fd, char* path, char* host_name, const char* url) {
+void _https_request(int fd, char* path, char* host_name) {
 
     // temp solution to rerouting
     // char* temp_hn = malloc(sizeof(char) * (strlen(host_name) + 20));
@@ -128,7 +126,7 @@ void _https_request(int fd, char* path, char* host_name, const char* url) {
     /* ssl context setup */
     SSL_CTX* ctx = SSL_CTX_new(TLS_client_method());
     if (!ctx) {
-        fprintf(stderr, "ssl context could not be set!\n");
+        fprintf(stderr, "ssl context could not be set!");
         return;
     }
 
@@ -136,26 +134,26 @@ void _https_request(int fd, char* path, char* host_name, const char* url) {
     SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, NULL);
 
     if (!SSL_CTX_set_default_verify_paths(ctx)) {
-        fprintf(stderr, "couldn't set the default certificate store!\n");
+        fprintf(stderr, "couldn't set the default certificate store!");
         return;
     }
 
     if (!SSL_CTX_set_min_proto_version(ctx, TLS1_2_VERSION)) {
-        fprintf(stderr, "couldn't set minimum TLS version to 1.2!\n");
+        fprintf(stderr, "couldn't set minimum TLS version to 1.2");
         return;
     }
 
     /* create ssl object and bio it to the socket fd */
     SSL* ssl_o = SSL_new(ctx);
     if (!ssl_o) {
-        fprintf(stderr, "couldn't create new ssl object!\n");
+        fprintf(stderr, "couldn't create new ssl object!");
         return;
     }
 
     BIO* bio;
     bio = BIO_new(BIO_s_socket());
     if (!bio) {
-        fprintf(stderr, "could not declare bio!\n");
+        fprintf(stderr, "could not declare bio!");
         return;
     }
 
@@ -166,19 +164,19 @@ void _https_request(int fd, char* path, char* host_name, const char* url) {
 
     // a server may support multiple hosts, thus it is required to specify which host name we wish to connect to
     if (!SSL_set_tlsext_host_name(ssl_o, host_name)) {
-        fprintf(stderr, "couldn't set host name for initial ClientHello!\n");
+        fprintf(stderr, "couldn't set host name for initial ClientHello!");
         return;
     }
 
     // now the app must verify the certificate returned by the server to belong to that host name
     if (!SSL_set1_host(ssl_o, host_name)) {
-        fprintf(stderr, "couldn't set host name to verify from the server-returned certificate!\n");
+        fprintf(stderr, "couldn't set host name to verify from the server-returned certificate!");
         return;
     }
 
     // connect to the server
     if (SSL_connect(ssl_o) < 1) {
-        fprintf(stderr, "failed to connect to the server!\n");
+        fprintf(stderr, "failed to connect to the server!");
 
         // get more information abt the failure if it is from a verification error
         // X509_OK represents a successful cert verif
@@ -198,7 +196,7 @@ void _https_request(int fd, char* path, char* host_name, const char* url) {
 
     // sends the whole request; no loop required unlike http
     if (!SSL_write_ex(ssl_o, request, strlen(request), &written)) {
-        fprintf(stderr, "failed to write ssl request to server!\n");
+        fprintf(stderr, "failed to write ssl request to server!");
     }
 
     // receive output and write it to a local file
@@ -206,7 +204,7 @@ void _https_request(int fd, char* path, char* host_name, const char* url) {
     char* file_loc = _get_file_loc(host_name);
     fptr = fopen(file_loc, "wb");
     if (!fptr) {
-        fprintf(stderr, "could not open file for writing!\n");
+        fprintf(stderr, "could not open file for writing!");
         return;
     }
 
@@ -221,16 +219,18 @@ void _https_request(int fd, char* path, char* host_name, const char* url) {
     // when all the data has been sent and no more remains, so a check if necessary to ensure
     // that it's the latter case. SSL_ERROR_ZERO_RETURN is sent when the peer (server) finishes sending data
     if (SSL_get_error(ssl_o, 0) != SSL_ERROR_ZERO_RETURN) {
-        fprintf(stderr, "failed reading remaining data OR server closed connection already!\n");
+        fprintf(stderr, "failed reading remaining data!");
+        return;
     }
 
     // shut down the connection, server already shut down above, client should shut down too
     int ret = SSL_shutdown(ssl_o);
     if (ret < 1) {
-        fprintf(stderr, "error shutting down OR server closed connection already!\n");
+        fprintf(stderr, "error shutting down!");
+        return;
     }
 
-    _clean_output(file_loc, url);
+    _clean_output(file_loc);
 
     free(file_loc);
     SSL_free(ssl_o);

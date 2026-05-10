@@ -56,7 +56,7 @@ int _clear_parsed_url(parsed_url_t* parsed) {
     return 0;
 }
 
-void _start_socket(char* host_name, char* port, char* path, const char* url) {
+void _start_socket(char* host_name, char* port, char* path) {
     struct addrinfo hints, *res, *p;
     int status, socket_fd;
     char ipstr[INET6_ADDRSTRLEN];
@@ -104,9 +104,9 @@ void _start_socket(char* host_name, char* port, char* path, const char* url) {
     // after connection, the client can send or receive once it is accepted
     // by the server
     if (strcmp(port, "80") == 0)
-        _http_request(socket_fd, path, host_name, url);
+        _http_request(socket_fd, path, host_name);
     else if (strcmp(port, "443") == 0)
-        _https_request(socket_fd, path, host_name, url);
+        _https_request(socket_fd, path, host_name);
 
     // close the socket after all ops are done
     close(socket_fd);
